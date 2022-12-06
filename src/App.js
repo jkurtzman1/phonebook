@@ -8,7 +8,9 @@ const App = () =>
   const [filterName, setFilterName] = useState('');
 
   //No need to filter anything with emptry string, which is default
-  const toShow = people.filter(p => p.name.includes(filterName)).map(p => <li key={p.name}>{p.name}: {p.number}</li>);
+  const filterNameLowercase = filterName.toLowerCase();
+  console.log(filterNameLowercase);
+  const toShow = people.filter(p => p.name.toLowerCase().includes(filterNameLowercase)).map(p => <li key={p.name}>{p.name}: {p.number}</li>);
   
   const addPerson = (event) =>
   {
