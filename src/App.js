@@ -1,5 +1,5 @@
-import axios from 'axios';
 import {useEffect, useState} from 'react'
+import pService from "./services/personService"
 
 const PersonForm = ({newName, handleNameChange, newNumber, handleNumberChange, addPerson}) =>
 {
@@ -27,18 +27,18 @@ const Filter = ({filterName, handleFilterChange}) =>
   );
 }
 
-const Person = ({person}) =>
+const Person = ({person, deleteFunction}) =>
 {
   return(
-    <li>{person.name}: {person.number}</li>
+    <li>{person.name}: {person.number} <button onClick={() => deleteFunction(person.id)}>Delete</button></li>
   );
 }
 
-const PeopleList = ({people, filterName}) =>
+const PeopleList = ({people, filterName, deleteFunction}) =>
 {
   const filterNameLowercase = filterName.toLowerCase();
   const toShow = people.filter(p => p.name.toLowerCase().includes(filterNameLowercase))
-                        .map(p => <Person key={p.name} person={p}/>);
+                        .map(p => <Person key={p.name} person={p} deleteFunction={deleteFunction}/>);
   return(toShow);
 }
 
@@ -49,10 +49,7 @@ const App = () =>
   const [newNumber, setNewNumber] = useState('');
   const [filterName, setFilterName] = useState('');
 
-  useEffect(()=>{
-    axios.get("http://localhost:3001/persons")
-    .then(response => setPeople(response.data))
-  }, []);
+  useEffect(() => {pService.getPhonebook().then(phoneBook => setPeople(phoneBook))}, []);
   
   const addPerson = (event) =>
   {
@@ -62,11 +59,22 @@ const App = () =>
     {
       if(people[i].name === newPerson.name)
       {
-        alert(`${newPerson.name} is already in the phonebook!`);
-        return;
+        if(people[i].number === newPerson.number)
+        {
+          alert(`${newPerson.name} is already in the phonebook!`);
+          return;
+        }else if(people[i].number !== newPerson.number)
+        {
+          pService.updatePerson(people[i].id, newPerson)
+                  .then(res => setPeople(people.map(p => people[i].id !== p.id ? p : res)));
+          setNewName('');
+          setNewNumber('');
+          return;
+        }
       }
     }
-    setPeople(people.concat(newPerson))
+
+    pService.addPersonToDB(newPerson).then(setPeople(people.concat(newPerson)));
     setNewName('');
     setNewNumber('');
   }
@@ -84,12 +92,12 @@ const App = () =>
   const handleFilterChange = (event) =>
   {
     setFilterName(event.target.value);
-    //console.log(people.filter(person => person.name.includes(filterName)));
-    //toShow = people.filter(person => person.name.includes(filterName));
-    //toShow = toShow.map(p => <li key={p.name}>{p.name}: {p.number}</li>)
-    //console.log(toShow);
-    //.map(person => <li key={person.name}>{person.name}: {person.number}</li>)
+  }
 
+  const deletePerson = (id) =>
+  {
+    console.log(`Delete person id: ${id}`);
+    pService.deletePersonFromDB(id).then(setPeople(people.filter(p => p.id !== id)));
   }
 
   return(
@@ -102,7 +110,7 @@ const App = () =>
           addPerson={addPerson}/>
       <h2>Numbers</h2>
       <ul>
-        <PeopleList people={people} filterName={filterName} />
+        <PeopleList people={people} filterName={filterName} deleteFunction = {deletePerson}/>
       </ul>
     </div>
   );
