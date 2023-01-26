@@ -65,8 +65,11 @@ const App = () =>
           return;
         }else if(people[i].number !== newPerson.number)
         {
-          pService.updatePerson(people[i].id, newPerson)
+          if(window.confirm(`${people[i].name} is already in the phonebook. Change the number?`))
+          {
+            pService.updatePerson(people[i].id, newPerson)
                   .then(res => setPeople(people.map(p => people[i].id !== p.id ? p : res)));
+          }
           setNewName('');
           setNewNumber('');
           return;
